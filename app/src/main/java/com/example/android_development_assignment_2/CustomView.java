@@ -4,9 +4,9 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-
 
 
 public class CustomView extends View {
@@ -14,14 +14,28 @@ public class CustomView extends View {
 
     private int nSquares;
 
+    private Player player1;
+    private Player player2;
+
     private int[] square1;
     private int[] square2;
-    private int[] player1;
-    private int[] player2;
+    private int[] player1Color;
+    private int[] player2Color;
+
+    private boolean touches[];
+    private float touchx[], touchy[];
+    private int first;
+    private boolean touch;
+
+    private int x,y;
+
+
+
 
 
     private Paint paint, paintPlayer1, paintPlayer2;
     private int squareDim;
+
 
 
     public CustomView(Context c) {
@@ -39,15 +53,30 @@ public class CustomView extends View {
         init();
     }
 
+
     private void init() {
+
         nSquares = 8;
+
+        player1 = new Player(false, 8, 3);
+        player2 = new Player(true, 8, 3);
+
         square1 = new int[]{0, 100, 0};
         square2 = new int[]{255, 250, 205};
         paint = new Paint();
-        player1 = new int[]{178, 34, 34};
-        player2 = new int[]{0, 0, 0};
+        player1Color = new int[]{178, 34, 34};
+        player2Color = new int[]{0, 0, 0};
         paintPlayer1 = new Paint();
         paintPlayer2 = new Paint();
+
+
+
+        touches = new boolean[16];
+        touchx = new float[16];
+        touchy = new float[16];
+
+        touch = false;
+
 
 
     }
@@ -55,18 +84,22 @@ public class CustomView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        int radius = (squareDim / 2);
         int count = 0;
+
+        paintPlayer1.setARGB(200, player1Color[0], player1Color[1], player1Color[2]);
+        paintPlayer2.setARGB(200, player2Color[0], player2Color[1], player2Color[2]);
+
         for (int row = 0; row < nSquares; row++) {
             if ((row & 1) == 0) {
                 paint.setARGB(200, square1[0], square1[1], square1[2]);
-
                 count++;
             } else {
                 paint.setARGB(200, square2[0], square2[1], square2[2]);
                 count++;
             }
 
-            paint.setFlags(Paint.ANTI_ALIAS_FLAG);
+//            paint.setFlags(Paint.ANTI_ALIAS_FLAG);
 
             for (int col = 0; col < nSquares; col++) {
                 int a = col * squareDim;
@@ -83,54 +116,33 @@ public class CustomView extends View {
 
             }
 
+        }
+        for (int row = 0; row < nSquares; row++) {
+            for (int col = 0; col < nSquares; col++) {
+                if (player1.pieces[row][col]) {
+                    Log.i("PlayerPiece", "Player 1 has piece in X: " + row + " Y: " + col);
+                    canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintPlayer1);
+                }
 
+                if (player2.pieces[row][col]) {
+                    Log.i("PlayerPiece", "Player 2 has piece in X: " + row + " Y: " + col);
+                    canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintPlayer2);
+                }
+            }
         }
 
-        int radius = (squareDim / 2);
 
-        paintPlayer2.setARGB(200, player2[0], player2[1], player2[2]);
-        canvas.drawCircle(squareDim + ((squareDim / 2)), (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle(3 * squareDim + ((squareDim / 2)), (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle(5 * squareDim + ((squareDim / 2)), (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle(7 * squareDim + ((squareDim / 2)), (squareDim / 2), radius, paintPlayer2);
-
-
-        canvas.drawCircle(((squareDim / 2)), squareDim + (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle((2 * squareDim + (squareDim / 2)), squareDim + (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle((4 * squareDim + (squareDim / 2)), squareDim + (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle((6 * squareDim + (squareDim / 2)), squareDim + (squareDim / 2), radius, paintPlayer2);
-
-
-        canvas.drawCircle((3 * (squareDim / 2)), 2 * squareDim + 3 / 2 * (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle((2 * squareDim + 3 * (squareDim / 2)), 2 * squareDim + 3 / 2 * (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle((4 * squareDim + 3 * (squareDim / 2)), 2 * squareDim + 3 / 2 * (squareDim / 2), radius, paintPlayer2);
-        canvas.drawCircle((6 * squareDim + 3 * (squareDim / 2)), 2 * squareDim + 3 / 2 * (squareDim / 2), radius, paintPlayer2);
+        canvas.getSaveCount();
 
         paint.setFlags(Paint.ANTI_ALIAS_FLAG);
 
 
+        if (touch == true) {
+            int row = squareDim * x;
+            int col = squareDim * y;
+            int rad = squareDim / 2;
 
-        paintPlayer1.setARGB(200,player1[0],player1[1],player1[2]);
-
-        canvas.drawCircle((3 * (squareDim / 2)) - squareDim, 4 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle((3 * (squareDim / 2)) + squareDim, 4 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle((3 * (squareDim / 2)) + 3 * squareDim, 4 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle((3 * (squareDim / 2)) + 5 * squareDim, 4 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-
-        canvas.drawCircle((squareDim + 3 * (squareDim / 2)) - squareDim, 5 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle((3 * squareDim + 3 * (squareDim / 2)) - squareDim, 5 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle((5 * squareDim + 3 * (squareDim / 2)) - squareDim, 5 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle((7 * squareDim + 3 * (squareDim / 2)) - squareDim, 5 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-
-        canvas.drawCircle(((squareDim / 2)), 6 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle(2 * squareDim + ((squareDim / 2)), 6 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle(4 * squareDim + (squareDim / 2), 6 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-        canvas.drawCircle(6 * squareDim + (squareDim / 2), 6 * squareDim + 3 * (squareDim / 2), radius, paintPlayer1);
-
-
-
-
-
+        }
 
 
     }
@@ -139,14 +151,81 @@ public class CustomView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
+
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            int pointer_id = event.getPointerId(event.getActionIndex());
+            touches[pointer_id] = true;
+            touchx[pointer_id] = event.getX();
+            touchy[pointer_id] = event.getY();
+            touch = true;
+
+            first = pointer_id;
+            invalidate();
+            return true;
+        } else if (event.getActionMasked() == MotionEvent.ACTION_UP) {
+            int pointer_id = event.getPointerId(event.getActionIndex());
+
+
+            int squareIndexAtX = (int) (event.getX() / squareSizeX) + 1;
+            int squareIndexAtY = (int) (event.getY() / squareSizeY) + 1;
+
+            Log.i("Deneme", squareIndexAtX + " - " + squareIndexAtY);
+
+
+            touches[pointer_id] = false;
+            first = pointer_id;
+            touch = false;
+            invalidate();
+            return true;
+
+        } else if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+
+            for (int i = 0; i < 16; i++) {
+                int pointer_index = event.findPointerIndex(i);
+                if (pointer_index != -1) {
+                    touchx[i] = event.getX(pointer_index);
+                    touchy[i] = event.getY(pointer_index);
+                }
+            }
+            invalidate();
+            return true;
+        } else if (event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) {
+            int pointer_id = event.getPointerId(event.getActionIndex());
+            touches[pointer_id] = true;
+            touchx[pointer_id] = event.getX(pointer_id);
+            touchy[pointer_id] = event.getY(pointer_id);
+            invalidate();
+            return true;
+        } else if (event.getActionMasked() == MotionEvent.ACTION_POINTER_UP) {
+            int pointer_id = event.getPointerId(event.getActionIndex());
+            touches[pointer_id] = false;
+            if (pointer_id == first) {
+                for (int i = 0; i < 16; i++) {
+                    if (touches[i]) {
+                        first = i;
+                        break;
+                    }
+                }
+                invalidate();
+                return true;
+            }
+        }
         return super.onTouchEvent(event);
+
+
     }
+
+    float squareSizeX;
+    float squareSizeY;
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
+
+        squareSizeX = width / 8.0f;
+        squareSizeY = height / 8.0f;
 
         int dimension = (width == 0) ? height : (height == 0) ? width : (width < height) ? width : height;
         setMeasuredDimension(dimension, dimension);
