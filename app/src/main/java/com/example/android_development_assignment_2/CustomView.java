@@ -17,8 +17,6 @@ public class CustomView extends View {
     Canvas Canv;
     private int nSquares;
 
-    private Player player1;
-    private Player player2;
 
     private int[] square1;
     private int[] square2;
@@ -61,8 +59,6 @@ public class CustomView extends View {
 
         nSquares = 8;
 
-        player1 = new Player(false, 8, 3);
-        player2 = new Player(true, 8, 3);
 
         square1 = new int[]{0, 100, 0};
         square2 = new int[]{255, 250, 205};
@@ -95,8 +91,6 @@ public class CustomView extends View {
         int count = 0;
         Log.e("OnDraw", "Triggered");
 
-        if (ClickEvent.lastEvent != ClickEvent.Type.Event_Nothing){
-        }
 
         for (int row = 0; row < nSquares; row++) {
             if ((row & 1) == 0) {
@@ -128,16 +122,19 @@ public class CustomView extends View {
 
         for (int row = 0; row < nSquares; row++) {
             for (int col = 0; col < nSquares; col++) {
-                if (player1.pieces[row][col] != null) {
-                    if (player1.pieces[row][col].isHighlighted) {
+                if (Player.players[0].pieces[row][col] == null) {
+                    Log.e("sdfg", "sdfgsdg");
+                }
+                if (Player.players[0].pieces[row][col].isActive) {
+                    if (Player.players[0].pieces[row][col].isHighlighted) {
                         canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintHighlighted);
                     } else {
                         canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintPlayer1);
                     }
                 }
 
-                if (player2.pieces[row][col] != null) {
-                    if (player2.pieces[row][col].isHighlighted) {
+                if (Player.players[1].pieces[row][col].isActive) {
+                    if (Player.players[1].pieces[row][col].isHighlighted) {
                         canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintHighlighted);
                     } else {
                         canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintPlayer2);
@@ -145,8 +142,6 @@ public class CustomView extends View {
                 }
             }
         }
-
-
 
 
 //        paint.setFlags(Paint.ANTI_ALIAS_FLAG);
@@ -158,6 +153,7 @@ public class CustomView extends View {
 
 
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+
             int pointer_id = event.getPointerId(event.getActionIndex());
             touches[pointer_id] = true;
             touchx[pointer_id] = event.getX();
@@ -165,7 +161,7 @@ public class CustomView extends View {
             touch = true;
 
             first = pointer_id;
-            invalidate();
+//            invalidate();
             return true;
         } else if (event.getActionMasked() == MotionEvent.ACTION_UP) {
 
@@ -177,50 +173,78 @@ public class CustomView extends View {
 
             switch (ClickEvent.lastEvent) {
                 case Event_Nothing:
-            if (currentPlayer.hasPieceAtIndex(squareIndexAtX, squareIndexAtY)) {
-                Log.i("Select piece", squareIndexAtX + " - " + squareIndexAtY);
-                ClickEvent.xIndex = squareIndexAtX;
-                ClickEvent.yIndex = squareIndexAtY;
-                ClickEvent.lastEvent = ClickEvent.Type.Event_SelectPiece;
-                currentPlayer.selectPiece(squareIndexAtX, squareIndexAtY);
-                invalidate();
-                return true;
-
-            } else
-                ClickEvent.lastEvent = ClickEvent.Type.Event_WrongPiece;
-                   break;
+                    if (currentPlayer.hasPieceAtIndex(squareIndexAtX, squareIndexAtY)) {
+                        Log.i("Select piece", squareIndexAtX + " - " + squareIndexAtY);
+                        ClickEvent.xIndex = squareIndexAtX;
+                        ClickEvent.yIndex = squareIndexAtY;
+                        ClickEvent.lastEvent = ClickEvent.Type.Event_SelectPiece;
+                        currentPlayer.selectPiece(squareIndexAtX, squareIndexAtY);
+                        invalidate();
+                        return true;
+                    } else
+                        ClickEvent.lastEvent = ClickEvent.Type.Event_WrongPiece;
+                    break;
                 case Event_WrongPiece:
                     ClickEvent.lastEvent = ClickEvent.Type.Event_Nothing;
                     Toast.makeText(ctx, "Please Select your piece", Toast.LENGTH_SHORT).show();
                     break;
                 case Event_SelectPiece:
                     Player enemyPlayer = Player.getEnemyPlayer();
-                    if (enemyPlayer.hasPieceAtIndex(squareIndexAtX, squareIndexAtY)) {
-                        ClickEvent.Type action = currentPlayer.pieceActionTo(ClickEvent.xIndex, ClickEvent.yIndex, squareIndexAtX, squareIndexAtY);
-                        if (action == ClickEvent.Type.Event_EatPiece) {
-                            Log.i("Eat piece", squareIndexAtX + " - " + squareIndexAtY);
-                            Player.endPlayerTurn();
-                        } else if (action == ClickEvent.Type.Event_MovePiece) {
-                            Player.endPlayerTurn();
-                        } else if (action == ClickEvent.Type.Event_MovePieceAndAskToContinue) {
-                            //TODO: check if has enemy pieces diagonally
+                    ClickEvent.Type action = currentPlayer.pieceActionTo(ClickEvent.xIndex, ClickEvent.yIndex, squareIndexAtX, squareIndexAtY);
 
-                        }
-                    } else {
-
+                    if (action == ClickEvent.Type.Event_EatPiece) {
+                        Log.i("Eat piece", squareIndexAtX + " - " + squareIndexAtY);
+                        Player.endPlayerTurn();
+                    } else if (action == ClickEvent.Type.Event_MovePiece) {
+                        Player.endPlayerTurn();
+                    } else if (action == ClickEvent.Type.Event_MovePieceAndAskToContinue) {
+                        //TODO: check if has enemy pieces diagonally
                     }
-                    invalidate();
+
                     break;
             }
+            invalidate();
+            return true;
 
 //            touches[pointer_id] = false;
 //            first = pointer_id;
 //            touch = false;
 //            invalidate();
-            return super.onTouchEvent(event);
+//            return super.onTouchEvent(event);
 
         }
-
+//        else if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+//
+//            for (int i = 0; i < 16; i++) {
+//                int pointer_index = event.findPointerIndex(i);
+//                if (pointer_index != -1) {
+//                    touchx[i] = event.getX(pointer_index);
+//                    touchy[i] = event.getY(pointer_index);
+//                }
+//            }
+//            invalidate();
+//            return true;
+//        } else if (event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) {
+//            int pointer_id = event.getPointerId(event.getActionIndex());
+//            touches[pointer_id] = true;
+//            touchx[pointer_id] = event.getX(pointer_id);
+//            touchy[pointer_id] = event.getY(pointer_id);
+//            invalidate();
+//            return true;
+//        } else if (event.getActionMasked() == MotionEvent.ACTION_POINTER_UP) {
+//            int pointer_id = event.getPointerId(event.getActionIndex());
+//            touches[pointer_id] = false;
+//            if (pointer_id == first) {
+//                for (int i = 0; i < 16; i++) {
+//                    if (touches[i]) {
+//                        first = i;
+//                        break;
+//                    }
+//                }
+//                invalidate();
+//                return true;
+//            }
+//        }
         return super.onTouchEvent(event);
 
 
@@ -242,7 +266,6 @@ public class CustomView extends View {
         setMeasuredDimension(dimension, dimension);
         squareDim = width / nSquares;
     }
-
 
 
 }

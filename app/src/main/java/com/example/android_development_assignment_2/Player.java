@@ -2,12 +2,20 @@ package com.example.android_development_assignment_2;
 
 import android.util.Log;
 
+
 public class Player {
 
     public static Player[] players = new Player[2];
 
     public static void endPlayerTurn() {
         for (Player pP : players) {
+            if (pP.isPlayersTurn){
+                for (int X = 0; X < pP.pieces.length; X++) {
+                    for (int Y = 0; Y < pP.pieces.length; Y++) {
+                        pP.pieces[X][Y].isHighlighted = Boolean.FALSE;
+                    }
+                }
+            }
             pP.isPlayersTurn = !pP.isPlayersTurn;
         }
         ClickEvent.lastEvent = ClickEvent.Type.Event_Nothing;
@@ -31,6 +39,7 @@ public class Player {
     boolean isTopPlayer;
     //     X->Y
     Piece[][] pieces;
+
     int score = 0;
     boolean isPlayersTurn;
 
@@ -49,18 +58,12 @@ public class Player {
 
     public void selectPiece(int x, int y) {
         for (int X = 0; X < pieces.length; X++) {
-            Piece[] piecesY=pieces[X];
-            for (int Y = 0; Y < piecesY.length; Y++) {
-                Piece pP = piecesY[y];
-                if (pP!=null) {
-                    pP.isHighlighted = (x == X && y == Y);
-                    if (x == X && y == Y)
-                        Log.i("Highlight piece", "x:" + x + " - y:" + y);
-                    pieces[X][Y]=pP;
-                }
+            for (int Y = 0; Y < pieces.length; Y++) {
+                pieces[X][Y].isHighlighted = Boolean.FALSE;
             }
         }
-        Log.i("ff", "sdfdsf");
+        pieces[x][y].isHighlighted= Boolean.TRUE;
+        Log.i("Highlight piece", "x:" + x + " - y:" + y);
     }
 
     public ClickEvent.Type pieceActionTo(int selectedX, int selectedY, int moveX, int moveY) {
@@ -72,32 +75,36 @@ public class Player {
         //TODO: King icin farkli dusun
         if (moveX == selectedX + 1) {
             moveDirectionX = +1;
-        } else if (moveY == selectedX - 1) {
+        } else if (moveX == selectedX - 1) {
             moveDirectionX = -1;
         } else {
             return ClickEvent.Type.Event_Nothing;
         }
         if (isTopPlayer) {
-            moveDirectionY = +1;
-        } else {
             moveDirectionY = -1;
+        } else {
+            moveDirectionY = +1;
         }
         if (selectedY + moveDirectionY != moveY)
             return ClickEvent.Type.Event_Nothing;
-        ;
+
 
 
         if (enemyPlayer.hasPieceAtIndex(moveX, moveY)) {
+            if( enemyPlayer.hasPieceAtIndex(moveX+moveDirectionX,moveY+moveDirectionY) || hasPieceAtIndex(moveX+moveDirectionX,moveY+moveDirectionY)){
+                //yenilecek tasin arkasinda baska bir tas var ondan yiyemezsin
+                return ClickEvent.Type.Event_Nothing;
+            }
             //eat and move through
             movePiece(selectedX, selectedY, moveX + moveDirectionX, moveY + moveDirectionY);
             score++;
             //delete enemy piece
-            enemyPlayer.pieces[moveX][moveY] = null;
+            enemyPlayer.pieces[moveX][moveY].isActive=false;
             //TODO: birden fazla tas yiyebiliyor ise farkli bir event donmek gerekebilir onu da diger tarafat kontrol edip yemeye devam et diyebilirsin
             return ClickEvent.Type.Event_EatPiece;
         } else if (!hasPieceAtIndex(moveX, moveY)) {
             //only move
-            movePiece(selectedX, selectedY, moveX + moveDirectionX, moveY + moveDirectionY);
+            movePiece(selectedX, selectedY, moveX, moveY);
             return ClickEvent.Type.Event_MovePiece;
         }
         return ClickEvent.Type.Event_Nothing;
@@ -105,26 +112,31 @@ public class Player {
 
     private void movePiece(int selectedX, int selectedY, int toX, int toY) {
         pieces[toX][toY] = pieces[selectedX][selectedY];
-        pieces[selectedX][selectedY] = null;
+        pieces[selectedX][selectedY] = new Piece();
     }
 
     public boolean hasPieceAtIndex(int x, int y) {
-        return pieces[x][y] != null;
+        return pieces[x][y].isActive;
     }
 
     private void initPlayersPieces(boolean isTopPlayer, int boxSize, int howManyY) {
         pieces = new Piece[boxSize][boxSize];
+        for (int x = 0; x < boxSize; x++) {
+            for (int y = 0; y < boxSize; y++) {
+                pieces[x][y]=new Piece();
+            }
+        }
         if (!isTopPlayer) {
             for (int x = 0; x < boxSize; x++) {
                 for (int y = 0; y < howManyY; y++) {
                     if (y % 2 == 0) {
                         //soldan ilk kutu dolu olacak
                         if (x % 2 == 0)
-                            pieces[x][y] = new Piece();
+                            pieces[x][y].setPiece();
                     } else {
                         //soldan ilk kutu bos olacak
                         if (x % 2 == 1)
-                            pieces[x][y] = new Piece();
+                            pieces[x][y].setPiece();
                     }
                 }
             }
@@ -134,11 +146,11 @@ public class Player {
                     if (y % 2 == 1) {
                         //soldan ilk kutu bos olacak
                         if (x % 2 == 1)
-                            pieces[x][y] = new Piece();
+                            pieces[x][y].setPiece();
                     } else {
                         //soldan ilk kutu dolu olacak
                         if (x % 2 == 0)
-                            pieces[x][y] = new Piece();
+                            pieces[x][y].setPiece();
                     }
                 }
             }
