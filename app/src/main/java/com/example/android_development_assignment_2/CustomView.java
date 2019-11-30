@@ -7,11 +7,14 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 
 public class CustomView extends View {
     private static final String TAG = CustomView.class.getSimpleName();
 
+    Context ctx;
+    Canvas Canv;
     private int nSquares;
 
     private Player player1;
@@ -27,34 +30,34 @@ public class CustomView extends View {
     private int first;
     private boolean touch;
 
-    private int x,y;
 
 
 
-
-
-    private Paint paint, paintPlayer1, paintPlayer2;
+    private Paint paint, paintPlayer1, paintPlayer2, paintHighlighted;
     private int squareDim;
 
+    private int x, y;
 
 
     public CustomView(Context c) {
         super(c);
-        init();
+        init(c);
     }
 
     public CustomView(Context c, AttributeSet as) {
         super(c, as);
-        init();
+        init(c);
     }
 
     public CustomView(Context c, AttributeSet as, int default_style) {
         super(c, as, default_style);
-        init();
+        init(c);
     }
 
 
-    private void init() {
+    private void init(Context c) {
+        ctx = c;
+        ClickEvent.lastEvent = ClickEvent.Type.Event_Nothing;
 
         nSquares = 8;
 
@@ -66,16 +69,20 @@ public class CustomView extends View {
         paint = new Paint();
         player1Color = new int[]{178, 34, 34};
         player2Color = new int[]{0, 0, 0};
+        int[] highlightColor = new int[]{0, 0, 255};
         paintPlayer1 = new Paint();
         paintPlayer2 = new Paint();
-
-
+        paintPlayer1.setARGB(200, player1Color[0], player1Color[1], player1Color[2]);
+        paintPlayer2.setARGB(200, player2Color[0], player2Color[1], player2Color[2]);
+        paintHighlighted = new Paint();
+        paintHighlighted.setARGB(200, highlightColor[0], highlightColor[1], highlightColor[2]);
 
         touches = new boolean[16];
         touchx = new float[16];
         touchy = new float[16];
 
         touch = false;
+
 
 
 
@@ -86,9 +93,10 @@ public class CustomView extends View {
         super.onDraw(canvas);
         int radius = (squareDim / 2);
         int count = 0;
+        Log.e("OnDraw", "Triggered");
 
-        paintPlayer1.setARGB(200, player1Color[0], player1Color[1], player1Color[2]);
-        paintPlayer2.setARGB(200, player2Color[0], player2Color[1], player2Color[2]);
+        if (ClickEvent.lastEvent != ClickEvent.Type.Event_Nothing){
+        }
 
         for (int row = 0; row < nSquares; row++) {
             if ((row & 1) == 0) {
@@ -117,34 +125,31 @@ public class CustomView extends View {
             }
 
         }
+
         for (int row = 0; row < nSquares; row++) {
             for (int col = 0; col < nSquares; col++) {
-                if (player1.pieces[row][col]) {
-                    Log.i("PlayerPiece", "Player 1 has piece in X: " + row + " Y: " + col);
-                    canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintPlayer1);
+                if (player1.pieces[row][col] != null) {
+                    if (player1.pieces[row][col].isHighlighted) {
+                        canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintHighlighted);
+                    } else {
+                        canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintPlayer1);
+                    }
                 }
 
-                if (player2.pieces[row][col]) {
-                    Log.i("PlayerPiece", "Player 2 has piece in X: " + row + " Y: " + col);
-                    canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintPlayer2);
+                if (player2.pieces[row][col] != null) {
+                    if (player2.pieces[row][col].isHighlighted) {
+                        canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintHighlighted);
+                    } else {
+                        canvas.drawCircle(row * squareDim + radius, (nSquares - col - 1) * squareDim + radius, radius, paintPlayer2);
+                    }
                 }
             }
         }
 
 
-        canvas.getSaveCount();
-
-        paint.setFlags(Paint.ANTI_ALIAS_FLAG);
 
 
-        if (touch == true) {
-            int row = squareDim * x;
-            int col = squareDim * y;
-            int rad = squareDim / 2;
-
-        }
-
-
+//        paint.setFlags(Paint.ANTI_ALIAS_FLAG);
     }
 
 
@@ -163,53 +168,59 @@ public class CustomView extends View {
             invalidate();
             return true;
         } else if (event.getActionMasked() == MotionEvent.ACTION_UP) {
-            int pointer_id = event.getPointerId(event.getActionIndex());
 
+            int squareIndexAtX = (int) (event.getX() / squareSizeX);
+            int squareIndexAtY = nSquares - (int) (event.getY() / squareSizeY) - 1;
 
-            int squareIndexAtX = (int) (event.getX() / squareSizeX) + 1;
-            int squareIndexAtY = (int) (event.getY() / squareSizeY) + 1;
+            Player currentPlayer = Player.getCurrentPlayer();
+            Log.e("OnFingerUp", "upped!");
 
-            Log.i("Deneme", squareIndexAtX + " - " + squareIndexAtY);
-
-
-            touches[pointer_id] = false;
-            first = pointer_id;
-            touch = false;
-            invalidate();
-            return true;
-
-        } else if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
-
-            for (int i = 0; i < 16; i++) {
-                int pointer_index = event.findPointerIndex(i);
-                if (pointer_index != -1) {
-                    touchx[i] = event.getX(pointer_index);
-                    touchy[i] = event.getY(pointer_index);
-                }
-            }
-            invalidate();
-            return true;
-        } else if (event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) {
-            int pointer_id = event.getPointerId(event.getActionIndex());
-            touches[pointer_id] = true;
-            touchx[pointer_id] = event.getX(pointer_id);
-            touchy[pointer_id] = event.getY(pointer_id);
-            invalidate();
-            return true;
-        } else if (event.getActionMasked() == MotionEvent.ACTION_POINTER_UP) {
-            int pointer_id = event.getPointerId(event.getActionIndex());
-            touches[pointer_id] = false;
-            if (pointer_id == first) {
-                for (int i = 0; i < 16; i++) {
-                    if (touches[i]) {
-                        first = i;
-                        break;
-                    }
-                }
+            switch (ClickEvent.lastEvent) {
+                case Event_Nothing:
+            if (currentPlayer.hasPieceAtIndex(squareIndexAtX, squareIndexAtY)) {
+                Log.i("Select piece", squareIndexAtX + " - " + squareIndexAtY);
+                ClickEvent.xIndex = squareIndexAtX;
+                ClickEvent.yIndex = squareIndexAtY;
+                ClickEvent.lastEvent = ClickEvent.Type.Event_SelectPiece;
+                currentPlayer.selectPiece(squareIndexAtX, squareIndexAtY);
                 invalidate();
                 return true;
+
+            } else
+                ClickEvent.lastEvent = ClickEvent.Type.Event_WrongPiece;
+                   break;
+                case Event_WrongPiece:
+                    ClickEvent.lastEvent = ClickEvent.Type.Event_Nothing;
+                    Toast.makeText(ctx, "Please Select your piece", Toast.LENGTH_SHORT).show();
+                    break;
+                case Event_SelectPiece:
+                    Player enemyPlayer = Player.getEnemyPlayer();
+                    if (enemyPlayer.hasPieceAtIndex(squareIndexAtX, squareIndexAtY)) {
+                        ClickEvent.Type action = currentPlayer.pieceActionTo(ClickEvent.xIndex, ClickEvent.yIndex, squareIndexAtX, squareIndexAtY);
+                        if (action == ClickEvent.Type.Event_EatPiece) {
+                            Log.i("Eat piece", squareIndexAtX + " - " + squareIndexAtY);
+                            Player.endPlayerTurn();
+                        } else if (action == ClickEvent.Type.Event_MovePiece) {
+                            Player.endPlayerTurn();
+                        } else if (action == ClickEvent.Type.Event_MovePieceAndAskToContinue) {
+                            //TODO: check if has enemy pieces diagonally
+
+                        }
+                    } else {
+
+                    }
+                    invalidate();
+                    break;
             }
+
+//            touches[pointer_id] = false;
+//            first = pointer_id;
+//            touch = false;
+//            invalidate();
+            return super.onTouchEvent(event);
+
         }
+
         return super.onTouchEvent(event);
 
 
@@ -231,6 +242,7 @@ public class CustomView extends View {
         setMeasuredDimension(dimension, dimension);
         squareDim = width / nSquares;
     }
+
 
 
 }
