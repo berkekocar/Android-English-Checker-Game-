@@ -1,11 +1,13 @@
 package com.example.android_development_assignment_2;
 
 public class ClickEvent {
+
     public static enum Type{
         Event_Nothing,
         Event_WrongPiece,
         Event_SelectPiece,
         Event_MovePiece,
+        Event_isSelected,
         Event_MovePieceAndAskToContinue,
         Event_EatPiece,
     }

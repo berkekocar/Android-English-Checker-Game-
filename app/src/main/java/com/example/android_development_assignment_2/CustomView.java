@@ -14,7 +14,6 @@ public class CustomView extends View {
     private static final String TAG = CustomView.class.getSimpleName();
 
     Context ctx;
-    Canvas Canv;
     private int nSquares;
 
 
@@ -39,22 +38,22 @@ public class CustomView extends View {
 
     public CustomView(Context c) {
         super(c);
-        init(c);
+        init();
     }
 
     public CustomView(Context c, AttributeSet as) {
         super(c, as);
-        init(c);
+        init();
     }
 
     public CustomView(Context c, AttributeSet as, int default_style) {
         super(c, as, default_style);
-        init(c);
+        init();
     }
 
 
-    private void init(Context c) {
-        ctx = c;
+    private void init() {
+
         ClickEvent.lastEvent = ClickEvent.Type.Event_Nothing;
 
         nSquares = 8;
@@ -82,6 +81,7 @@ public class CustomView extends View {
 
 
 
+
     }
 
     @Override
@@ -89,7 +89,6 @@ public class CustomView extends View {
         super.onDraw(canvas);
         int radius = (squareDim / 2);
         int count = 0;
-        Log.e("OnDraw", "Triggered");
 
 
         for (int row = 0; row < nSquares; row++) {
@@ -123,7 +122,6 @@ public class CustomView extends View {
         for (int row = 0; row < nSquares; row++) {
             for (int col = 0; col < nSquares; col++) {
                 if (Player.players[0].pieces[row][col] == null) {
-                    Log.e("sdfg", "sdfgsdg");
                 }
                 if (Player.players[0].pieces[row][col].isActive) {
                     if (Player.players[0].pieces[row][col].isHighlighted) {
@@ -169,17 +167,22 @@ public class CustomView extends View {
             int squareIndexAtY = nSquares - (int) (event.getY() / squareSizeY) - 1;
 
             Player currentPlayer = Player.getCurrentPlayer();
-            Log.e("OnFingerUp", "upped!");
 
             switch (ClickEvent.lastEvent) {
                 case Event_Nothing:
                     if (currentPlayer.hasPieceAtIndex(squareIndexAtX, squareIndexAtY)) {
-                        Log.i("Select piece", squareIndexAtX + " - " + squareIndexAtY);
                         ClickEvent.xIndex = squareIndexAtX;
                         ClickEvent.yIndex = squareIndexAtY;
                         ClickEvent.lastEvent = ClickEvent.Type.Event_SelectPiece;
-                        currentPlayer.selectPiece(squareIndexAtX, squareIndexAtY);
+                        if (!currentPlayer.checkHighlight(squareIndexAtX,squareIndexAtY)){
+                            currentPlayer.selectPiece(squareIndexAtX, squareIndexAtY);
+                        }else{
+                            currentPlayer.unSelectPiece(squareIndexAtX, squareIndexAtY);
+                        }
+
+
                         invalidate();
+
                         return true;
                     } else
                         ClickEvent.lastEvent = ClickEvent.Type.Event_WrongPiece;
@@ -188,6 +191,14 @@ public class CustomView extends View {
                     ClickEvent.lastEvent = ClickEvent.Type.Event_Nothing;
                     Toast.makeText(ctx, "Please Select your piece", Toast.LENGTH_SHORT).show();
                     break;
+                case Event_isSelected:
+                    if (currentPlayer.hasPieceAtIndex(squareIndexAtX,squareIndexAtY)){
+                        currentPlayer.unSelectPiece(squareIndexAtX, squareIndexAtY);
+                        invalidate();
+
+                    }
+
+
                 case Event_SelectPiece:
                     Player enemyPlayer = Player.getEnemyPlayer();
                     ClickEvent.Type action = currentPlayer.pieceActionTo(ClickEvent.xIndex, ClickEvent.yIndex, squareIndexAtX, squareIndexAtY);
@@ -198,7 +209,8 @@ public class CustomView extends View {
                     } else if (action == ClickEvent.Type.Event_MovePiece) {
                         Player.endPlayerTurn();
                     } else if (action == ClickEvent.Type.Event_MovePieceAndAskToContinue) {
-                        //TODO: check if has enemy pieces diagonally
+                        Player.endPlayerTurn();
+
                     }
 
                     break;
@@ -265,6 +277,12 @@ public class CustomView extends View {
         int dimension = (width == 0) ? height : (height == 0) ? width : (width < height) ? width : height;
         setMeasuredDimension(dimension, dimension);
         squareDim = width / nSquares;
+    }
+    public void reset(){
+        init();
+        Log.i("Reset", "Reset!!!");
+
+
     }
 
 
